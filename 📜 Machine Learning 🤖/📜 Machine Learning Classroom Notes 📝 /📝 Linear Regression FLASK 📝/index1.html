@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>House Price Prediction</title>
+    <style>
+        body {
+            background-color: #f0f8ff; /* Light blue background */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        label {
+            color: #555;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>House Price Prediction</h2>
+        <form action="/predict" method="post">
+            <div>
+                <label>Median Income (MedInc): </label>
+                <input type="number" step="any" name="MedInc" required><br><br>
+            </div>
+
+            <div>
+                <label>House Age (HouseAge): </label>
+                <input type="number" name="HouseAge" required><br><br>
+            </div>
+
+            <div>
+                <label>Population (Population): </label>
+                <input type="number" name="Population" required><br><br>
+            </div>
+
+            <div>
+                <label>Average Occupancy (AveOccup): </label>
+                <input type="number" step="any" name="AveOccup" required><br><br>
+            </div>
+
+            <button type="submit">Predict</button>
+        </form>
+
+        {% if prediction is not none %}
+        <div>
+            <h4>Predicted House Price: ${{ prediction }}</h4>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
