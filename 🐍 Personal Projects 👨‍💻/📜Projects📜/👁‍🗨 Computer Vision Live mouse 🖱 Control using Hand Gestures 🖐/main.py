@@ -114,7 +114,7 @@ def main():
 
             detect_gesture(frame, landmark_list, processed)
 
-            cv2.imshow('Frame', frame)
+            cv2.imshow('Hemant Katta Frame', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
     finally:
