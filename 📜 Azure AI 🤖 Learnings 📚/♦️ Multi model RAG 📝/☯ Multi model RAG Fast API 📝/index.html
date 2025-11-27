@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise RAG Assistant</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --chat-bg: #ffffff;
+            --user-msg-bg: #2563eb;
+            --bot-msg-bg: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background-color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Chat Area */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .user .avatar { background-color: #dbeafe; }
+        .bot .avatar { background-color: #e0e7ff; }
+
+        .bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 1rem;
+            line-height: 1.5;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .user .bubble {
+            background-color: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot .bubble {
+            background-color: var(--bot-msg-bg);
+            color: #1e293b;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Sources Section */
+        .sources-container {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+        }
+
+        .source-title {
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .source-content {
+            display: none;
+            background: #fff;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            margin-top: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            color: #475569;
+        }
+
+        /* Input Area */
+        .input-area {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .input-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        button#send-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button#send-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        button#send-btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Indicator */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span>🧠</span> Multi-RAG Assistant
+        </div>
+        <div class="status-badge">● System Online</div>
+    </header>
+
+    <div id="chat-container">
+        <div class="message bot">
+            <div class="avatar">🤖</div>
+            <div class="bubble">
+                Hello! I can answer questions about your PDF document using <b>Text, Tables, Formulas, and Images</b>. Try asking:
+                <br><br>
+                <i>"What is the formula for Attention?"</i><br>
+                <i>"Explain the architecture diagram."</i>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <input type="text" id="user-input" placeholder="Ask a question about your document..." autocomplete="off">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Allow Enter key to submit
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        sendBtn.addEventListener('click', handleSend);
+
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. Add User Message
+            addMessage(text, 'user');
+            userInput.value = '';
+            sendBtn.disabled = true;
+
+            // 2. Show Loading
+            const loadingId = addLoading();
+
+            try {
+                // 3. Call FastAPI
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: text })
+                });
+
+                const data = await response.json();
+                
+                // 4. Remove Loading & Add Bot Response
+                removeMessage(loadingId);
+                
+                if (response.ok) {
+                    addMessage(data.answer, 'bot', data.sources);
+                } else {
+                    addMessage("Error: " + (data.detail || "Something went wrong"), 'bot');
+                }
+
+            } catch (error) {
+                removeMessage(loadingId);
+                addMessage("Network Error: Could not connect to server.", 'bot');
+            }
+
+            sendBtn.disabled = false;
+            userInput.focus();
+        }
+
+        function addMessage(text, sender, sources = []) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            
+            const avatar = sender === 'user' ? '🧑‍💻' : '🤖';
+            
+            // Build Sources HTML if any
+            let sourcesHtml = '';
+            if (sources && sources.length > 0) {
+                sourcesHtml = `
+                    <div class="sources-container">
+                        <div class="source-title" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                            📚 View ${sources.length} Sources 
+                            <span style="font-size: 0.7em">▼</span>
+                        </div>
+                        <div class="source-content">
+                            ${sources.map((s, i) => `[${i+1}] ${s}`).join('\n\n')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Convert newlines to breaks for HTML
+            const formattedText = text.replace(/\n/g, '<br>');
+
+            div.innerHTML = `
+                <div class="avatar">${avatar}</div>
+                <div class="bubble">
+                    ${formattedText}
+                    ${sourcesHtml}
+                </div>
+            `;
+            
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addLoading() {
+            const id = 'loading-' + Date.now();
+            const div = document.createElement('div');
+            div.className = 'message bot';
+            div.id = id;
+            div.innerHTML = `
+                <div class="avatar">🤖</div>
+                <div class="bubble">
+                    <div class="typing-indicator">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        }
+
+        function removeMessage(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+    </script>
+</body>
+</html>
